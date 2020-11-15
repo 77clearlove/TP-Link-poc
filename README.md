@@ -14,7 +14,7 @@ This vulnerability happen when  devDiscoverHandle  receive data by using `recvfr
 
 Refer to this video: [poc_video.mkv](./poc_video.mkv)
 
-**poc&**
+**poc&exp**
 
 It's for WDR8660
 ```
