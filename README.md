@@ -91,3 +91,7 @@ print("[+] Success")
 2020.11.15 report to CVE and TP-Link
 
 2020.11.21 assign CVE-2020-28877
+
+## Acknowledgment 
+
+Credit to [@peanuts](https://github.com/peanuts62), [@leonW7](https://github.com/leonW7) and [@cpegg](https://github.com/cpeggg) from Technology Research Institute of Legendsec at Qi'anxin Group.
