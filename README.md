@@ -90,7 +90,7 @@ print("[+] Success")
 ## Timeline
 2020.11.15 report to CVE and TP-Link
 
-2020.11.21 assign CVE-2020-28877
+2020.11.21 assign [CVE-2020-28877](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-28877)
 
 ## Acknowledgment 
 
